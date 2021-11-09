@@ -34,7 +34,7 @@ public class Server {
         this.collectionWorker = serverCollectionWorker;
     }
 
-    private static void checkConsole() {
+    private static void checkConsole(CollectionWorkerImpl scw) {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 
         try {
@@ -50,6 +50,10 @@ public class Server {
                     log("WARNING: Сетевой канал закрыт.");
                     log(" Завершение работы.");
                     System.exit(0);
+                }
+                if (command.equals("save")) {
+                    Message message = scw.save();
+                    System.out.println(message.getContent());
                 }
             }
         } catch (Exception e) {
@@ -170,7 +174,7 @@ public class Server {
 
                 }
             });
-            checkConsole();
+            checkConsole(scw);
 
         } catch (SocketException e) {
             log("WARNING: Пользователь отключился.");
