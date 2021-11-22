@@ -9,17 +9,18 @@ import java.nio.channels.SocketChannel;
 public class ServerUtil {
     private static byte[] serialize(Message msg) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try(
+        try (
                 ObjectOutputStream oos = new ObjectOutputStream(baos);
-        )
-        {
+        ) {
             oos.writeObject(msg);
             return baos.toByteArray();
         }
     }
-    public static void send(SocketChannel channel, Message msg) throws IOException{
+
+    public static void send(SocketChannel channel, Message msg) throws IOException {
         channel.write(ByteBuffer.wrap(serialize(msg)));
     }
+
     private static Message deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try (ObjectInputStream ois = new ObjectInputStream(bais)) {

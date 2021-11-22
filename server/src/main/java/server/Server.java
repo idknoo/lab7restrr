@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.*;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
@@ -25,6 +26,7 @@ public class Server {
     public static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     private CollectionWorkerImpl collectionWorker;
     private static ServerSocketChannel channel;
+    private static Database database;
     public static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
     private static ExecutorService threadPool = Executors.newFixedThreadPool(1);
     private static boolean selectorIsClosed = false;
@@ -62,6 +64,22 @@ public class Server {
 
     public static void main(String[] args) {
 
+        String url = "jdbc:postgresql://localhost:5432/postgres";
+        String user = "postgres";
+        String password = "password";
+        log(" Здравствуйте.");
+        log("INFO: Настройка всех систем...");
+        Scanner scanner = new Scanner(System.in);
+        database = null;
+        try {
+            database = new Database(url, user, password);
+        } catch (SQLException throwables) {
+            log("Не удалось подключиться к базе данных. Программа сдохла. Коду пи*?%№.");
+            throwables.printStackTrace();
+        }
+        CollectionWorkerImpl scw = new CollectionWorkerImpl(database);
+        log("INFO: Элементы из базы данных успешно загружены в память");
+
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         String filename = "collection.json";
         File file = new File(filename);
@@ -69,11 +87,11 @@ public class Server {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-        log(" Здравствуйте.");
-        log("INFO: Настройка всех систем...");
-        Scanner scanner = new Scanner(System.in);
-        FileWorker fileWorker = new FileWorker(file, objectMapper);
-        CollectionWorkerImpl scw = new CollectionWorkerImpl(fileWorker);
+//        log(" Здравствуйте.");
+//        log("INFO: Настройка всех систем...");
+//        Scanner scanner = new Scanner(System.in);
+//        FileWorker fileWorker = new FileWorker(file, objectMapper);
+//        CollectionWorkerImpl scw = new CollectionWorkerImpl(fileWorker);
         try {
             log("INFO: Сервер запускается...");
             log("INFO: Введите свободный порт для подключения:");
@@ -120,7 +138,7 @@ public class Server {
                                     SocketChannel client = (SocketChannel) key.channel();
                                     Message clientCommand = ServerUtil.receive(client);
                                     log("INFO: Чтение из канала прошло успешно.");
-                                    Server.forkJoinPool.execute(new TaskHolder(clientCommand, key, scw));
+                                    Server.forkJoinPool.execute(new TaskHolder(clientCommand, key, scw, database));
                                 } catch (SocketException e) {
                                     log("WARNING: Клиент отключился");
                                     key.cancel();

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,13 +20,14 @@ public class CollectionWorkerImpl implements CollectionWorker {
 
     private final LocalDateTime time;
     private final LinkedHashMap<Integer, Organization> organizationLinkedHashMap; //TODO: достаем из Организации ID и он будет ключом
-    private final FileWorker fileWorker;
+//    private final FileWorker fileWorker;
+    private final Database database;
 
-    public CollectionWorkerImpl(FileWorker fileWorker) {
-        this.fileWorker = fileWorker;
+    public CollectionWorkerImpl(Database database) {
+        organizationLinkedHashMap = Collections.synchronizedList(new ArrayList<>(database.readAllOrganizations())); // TODO: придумать что-то с типами тут
         this.time = LocalDateTime.now();
-        organizationLinkedHashMap = new LinkedHashMap<>();
-        readOrganizations();
+        this.database = database;
+        organizationLinkedHashMap.values().addAll(database.readAllOrganizations());
     }
 
     @Override
@@ -107,7 +109,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     }
 
     @Override
-    public Message save() { //TODO: коллекшион веркер + this
+    public Message save() {
         try {
             if (organizationLinkedHashMap.size() == 0) {
                 fileWorker.clear();
