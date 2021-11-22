@@ -6,7 +6,7 @@ import lib.message.Message;
 public class Save implements Command {
 
     @Override
-    public Message execute(CollectionWorker collectionManager) {
+    public Message execute(CollectionWorker collectionManager, User user) {
         return collectionManager.save();
     }
 }

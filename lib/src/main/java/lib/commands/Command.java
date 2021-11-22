@@ -6,5 +6,5 @@ import lib.message.Message;
 import java.io.Serializable;
 
 public interface Command extends Serializable {
-    Message execute(CollectionWorker collectionManager);
+    Message execute(CollectionWorker collectionManager, User user);
 }

@@ -3,6 +3,7 @@ package server;
 import lib.collection.CollectionWorker;
 import lib.commands.Command;
 import lib.commands.ReadOrganizationOperation;
+import lib.commands.User;
 import lib.message.CollectionMessage;
 import lib.message.Message;
 import lib.organization.Organization;
@@ -91,7 +92,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     }
 
     @Override
-    public Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id) {
+    public Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id, User user) { // проверить
         Organization toRemove = organizationLinkedHashMap.values().stream()
                 .filter(p -> p.getId().equals(id))
                 .findFirst()
@@ -100,45 +101,72 @@ public class CollectionWorkerImpl implements CollectionWorker {
         if (toRemove == null)
             return new Message("Организации с id " + id + " не существует.");
 
+        if (!toRemove.getName().equals(user.getName()))
+            return new Message("Организация с id = " + id + " не твоя. Не трогай чужое!");
+
         Organization organization = readOrganizationOperation.readOrganization();
+        organization.setName(user.getName());
         organization.setId(id);
 
-        organizationLinkedHashMap.remove(id);
-        organizationLinkedHashMap.put(id, organization);
-        return new Message("Организация с id == " + id + " обновлена.");
+        if (database.removeOrganization(id) && database.insertOrganizationWithoutInitialization(organization)) {
+            organizationLinkedHashMap.remove(id);
+            organizationLinkedHashMap.put(id, organization);
+            return new Message("Организация с id = " + id + " обновлена.");
+        } else {
+            return new Message("Ошибка БД.");
+        }
     }
 
     @Override
-    public Message save() {
-        try {
-            if (organizationLinkedHashMap.size() == 0) {
-                fileWorker.clear();
-                return new Message("коллекция пуста. файл удален");
-            }
-            fileWorker.serialize(new ArrayList<Organization>(organizationLinkedHashMap.values()));
-            return new Message("коллекция сохранена");
-        } catch (IOException e) {
-            e.printStackTrace();
-        return new Message("не удалось сохранить коллекцию");
+    public Message info(User user) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Вызвана команда info. Информация о коллекции:");
+        stringBuilder.append("\nТип коллекции: PriorityQueue");
+        stringBuilder.append("\nКоллекция содержит элементы класса: Organization");
+        stringBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
+        if (this.organizationLinkedHashMap.size() > 0) {
+            stringBuilder.append(String.format("\nДата инициализации коллекции: %s\n", this.time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
+            stringBuilder.append(String.format("\nМаксимальный элемент коллекции: \n%s\n", this.getMaxOrganization().toString()));
         }
+        return new Message(stringBuilder.toString());
     }
+
+
+//    @Override
+//    public Message save() {
+//        try {
+//            if (organizationLinkedHashMap.size() == 0) {
+//                fileWorker.clear();
+//                return new Message("коллекция пуста. файл удален");
+//            }
+//            fileWorker.serialize(new ArrayList<Organization>(organizationLinkedHashMap.values()));
+//            return new Message("коллекция сохранена");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        return new Message("не удалось сохранить коллекцию");
+//        }
+//    }
 
     public LinkedHashMap<Integer, Organization> getCollection() {
         return organizationLinkedHashMap;
     }
 
     @Override
-    public Message insert(Organization organization) {
-        organizationLinkedHashMap.put(organization.getId(), organization);
-        return new Message("Организация добавлена");
+    public Message insert(Organization organization, User user) {
+    if (database.initializeAndInsertOrganization(organization, user)) {
+        organizationLinkedHashMap.put(organization.getId(), organization); //проверить это
+        return new Message("Организация добавлена.");
+    } else {
+        return new Message("Организация не добавлена из-за ошибки в Базе данных.");
     }
+}
 
-    private void readOrganizations() {
-        ArrayList<Organization> organizations = fileWorker.parse();
-        for (Organization organization : organizations) {
-            insert(organization);
-        }
-    }
+//    private void readOrganizations() {
+//        ArrayList<Organization> organizations = fileWorker.parse();
+//        for (Organization organization : organizations) {
+//            insert(organization);
+//        }
+//    }
 
     @Override
 
@@ -229,7 +257,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     }
 
 
-    public Message execute(Command command) {
-        return command.execute(this);
+    public Message execute(Command command, User user) {
+        return command.execute(this, user);
     }
 }

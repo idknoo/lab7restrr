@@ -53,10 +53,10 @@ public class Server {
                     log(" Завершение работы.");
                     System.exit(0);
                 }
-                if (command.equals("save")) {
-                    Message message = scw.save();
-                    System.out.println(message.getContent());
-                }
+//                if (command.equals("save")) {
+//                    Message message = scw.save();
+//                    System.out.println(message.getContent());
+//                }
             }
         } catch (Exception e) {
         }
@@ -80,12 +80,13 @@ public class Server {
         CollectionWorkerImpl scw = new CollectionWorkerImpl(database);
         log("INFO: Элементы из базы данных успешно загружены в память");
 
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        String filename = "collection.json";
-        File file = new File(filename);
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+//        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+//        String filename = "collection.json";
+//        File file = new File(filename);
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.registerModule(new JavaTimeModule());
+//        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
 //        log(" Здравствуйте.");
 //        log("INFO: Настройка всех систем...");

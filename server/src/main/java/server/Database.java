@@ -61,7 +61,7 @@ public class Database {
         }
     }
 
-    public boolean initializeAndInsertOrganozation(Organization organization, User user) {
+    public boolean initializeAndInsertOrganization(Organization organization, User user) {
         System.out.println("initializeAndInsertOrganization");
         try {
             organization.setId(nextIdInSequence());

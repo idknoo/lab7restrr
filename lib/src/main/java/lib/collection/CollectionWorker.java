@@ -1,6 +1,7 @@
 package lib.collection;
 
 import lib.commands.ReadOrganizationOperation;
+import lib.commands.User;
 import lib.message.Message;
 import lib.organization.Organization;
 
@@ -11,6 +12,8 @@ public interface CollectionWorker {
     Message clear();
 
     Message info();
+
+    Message info(User user);
 
     Message maxByName();
 
@@ -30,10 +33,10 @@ public interface CollectionWorker {
 
     Message show();
 
-    Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id);
+    Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id, User user);
 
 
-    Message insert(Organization organization);
+    Message insert(Organization organization, User user);
 
 
 }

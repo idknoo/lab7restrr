@@ -13,8 +13,8 @@ public class UpdateId implements Command {
     }
 
     @Override
-    public Message execute(CollectionWorker collectionWorker) {
-        return collectionWorker.updateId(readOrganizationOperation, id);
+    public Message execute(CollectionWorker collectionWorker, User user) {
+        return collectionWorker.updateId(readOrganizationOperation, id, user);
     }
 }
 

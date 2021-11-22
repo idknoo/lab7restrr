@@ -12,7 +12,7 @@ public class CommandError implements Command {
     }
 
     @Override
-    public Message execute(CollectionWorker collectionManager) {
+    public Message execute(CollectionWorker collectionManager, User user) {
         return new Message(message);
     }
 }

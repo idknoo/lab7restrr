@@ -11,7 +11,7 @@ public class RemoveLowerKey implements Command {
     }
 
     @Override
-    public Message execute(CollectionWorker collectionWorker) {
+    public Message execute(CollectionWorker collectionWorker, User user) {
         return collectionWorker.removeLowerKey(id);
     }
 }
