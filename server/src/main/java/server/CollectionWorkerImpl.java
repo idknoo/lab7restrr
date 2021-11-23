@@ -62,19 +62,19 @@ public class CollectionWorkerImpl implements CollectionWorker {
         }
     }
 
-    @Override
-    public Message info() {
-        StringBuilder strBuilder = new StringBuilder();
-        strBuilder.append("Вызвана команда info. Информация о коллекции:");
-        strBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
-        strBuilder.append("\nКоллекция содержит элементы класса: Organization");
-        strBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
-        if (this.organizationLinkedHashMap.size() > 0) {
-            strBuilder.append(String.format("\nДата инициализации коллекции: %s\n", this.time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
-            strBuilder.append(String.format("\nМаксимальный элемент коллекции: \n%s\n", this.getMaxOrganization().toString()));
-        }
-        return new Message(strBuilder.toString());
-    }
+//    @Override
+//    public Message info() {
+//        StringBuilder strBuilder = new StringBuilder();
+//        strBuilder.append("Вызвана команда info. Информация о коллекции:");
+//        strBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
+//        strBuilder.append("\nКоллекция содержит элементы класса: Organization");
+//        strBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
+//        if (this.organizationLinkedHashMap.size() > 0) {
+//            strBuilder.append(String.format("\nДата инициализации коллекции: %s\n", this.time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
+//            strBuilder.append(String.format("\nМаксимальный элемент коллекции: \n%s\n", this.getMaxOrganization().toString()));
+//        }
+//        return new Message(strBuilder.toString());
+//    }
 
     private Organization getMaxOrganization() {
         return organizationLinkedHashMap.values().stream().max(Organization::compareTo).orElse(null);
@@ -121,7 +121,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     public Message info(User user) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Вызвана команда info. Информация о коллекции:");
-        stringBuilder.append("\nТип коллекции: PriorityQueue");
+        stringBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
         stringBuilder.append("\nКоллекция содержит элементы класса: Organization");
         stringBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
         if (this.organizationLinkedHashMap.size() > 0) {

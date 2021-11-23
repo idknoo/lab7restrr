@@ -6,6 +6,7 @@ import lib.organization.Organization;
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.PriorityQueue;
 
 public class Database {
@@ -66,7 +67,7 @@ public class Database {
         try {
             organization.setId(nextIdInSequence());
             organization.setName(user.getName());
-            organization.setCreationDate(LocalDate.now());
+            organization.setCreationDate(ZonedDateTime.now());
             return insertOrganizationWithoutInitialization(organization);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
