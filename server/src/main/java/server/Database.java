@@ -1,7 +1,9 @@
 package server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lib.commands.User;
 import lib.organization.Organization;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.io.IOException;
 import java.sql.*;
@@ -13,36 +15,56 @@ public class Database {
     private final String url;
     private final String user;
     private final String password;
+    private final DatabaseUtil databaseUtil;
 
-    private Connection connection;
+//    private Connection connection;
+    private static BasicDataSource ds = new BasicDataSource(); //пул конекшенов
 
-    public Database(String url, String user, String password) throws SQLException {
+    public Database(String url,
+                    String user,
+                    String password,
+                    DatabaseUtil databaseUtil) throws SQLException {
         this.url = url;
         this.user = user;
         this.password = password;
+        this.databaseUtil = databaseUtil;
+        ds.setUrl(url);
+        ds.setUsername(user);
+        ds.setPassword(password);
+        ds.setMinIdle(5);
+        ds.setMaxIdle(20);
+        ds.setMaxOpenPreparedStatements(100);
         establishConnection();
     }
 
     private void establishConnection() throws SQLException {
         System.out.println("establishConnection");
-        connection = DriverManager.getConnection(url, user, password);
+
+//        connection = DriverManager.getConnection(url, user, password);
+    }
+    public synchronized Connection getConnection() throws SQLException {
+        return ds.getConnection();
+    }
+
+    public Connection createConnection() throws SQLException {
+        return DriverManager.getConnection(url, user, password);
     }
 
     public PriorityQueue<Organization> readAllOrganizations() {
         System.out.println("readAllOrganizations");
         PriorityQueue<Organization> collection = new PriorityQueue<>();
 
-        try (Statement statement = connection.createStatement()) {
+        try (Statement statement = getConnection().createStatement()) {
             String sql = "select * from collection;";
 
             try (ResultSet rs = statement.executeQuery(sql)) {
                 while (rs.next()) {
-                    collection.add(DatabaseUtil.readOrganizationFromResultSet(rs));
+                    collection.add(databaseUtil.readOrganization(rs));
                 }
             }
 
             return collection;
-        } catch (SQLException throwables) {
+        } catch (SQLException | JsonProcessingException throwables) {
             throwables.printStackTrace();
         }
 
@@ -51,8 +73,8 @@ public class Database {
 
     private int nextIdInSequence() throws SQLException {
         System.out.println("nextIdInSequence");
-        try (Statement statement = connection.createStatement()) {
-            String sql = "select nextval ('id_seq');";
+        try (Statement statement = getConnection().createStatement()) {
+            String sql = "select nextval('collection_id_seq');";
 
             try (ResultSet rs = statement.executeQuery(sql)) {
                 rs.next();
@@ -66,7 +88,7 @@ public class Database {
         System.out.println("initializeAndInsertOrganization");
         try {
             organization.setId(nextIdInSequence());
-            organization.setName(user.getName());
+            organization.setOwnerName(user.getName());
             organization.setCreationDate(ZonedDateTime.now());
             return insertOrganizationWithoutInitialization(organization);
         } catch (SQLException throwables) {
@@ -78,13 +100,13 @@ public class Database {
 
     public boolean insertOrganizationWithoutInitialization(Organization organization) {
         System.out.println("insertOrganizationWithoutInitialization");
-        String sql = DatabaseUtil.getProductInsertionSql();
+        String sql = databaseUtil.getOrganizationInsert();
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            DatabaseUtil.initPreparedStatement(preparedStatement, organization);
+        try (PreparedStatement preparedStatement = getConnection().prepareStatement(sql)) {
+            databaseUtil.initPS(preparedStatement, organization);
             int updatedRows = preparedStatement.executeUpdate();
             return updatedRows == 1;
-        } catch (SQLException | NullPointerException throwables) {
+        } catch (SQLException | NullPointerException | JsonProcessingException throwables) {
             throwables.printStackTrace();
         }
 
@@ -103,10 +125,11 @@ public class Database {
 
     public boolean removeOrganization(Integer OrganizationId) {
         System.out.println("removeOrganization");
-        try (Statement statement = connection.createStatement()) {
+
+        try (Statement statement = getConnection().createStatement()) {
             String sql = "delete from collection where id = " + OrganizationId + ";";
-            int updatedRows = statement.executeUpdate(sql);
-            return updatedRows == 1;
+            statement.executeUpdate(sql);
+            return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
@@ -125,7 +148,7 @@ public class Database {
 
         String sql = "insert into users (username, password) values (?, ?);";
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
             statement.setString(1, user.getName());
             statement.setString(2, user.getPassword());
             int updatedRows = statement.executeUpdate();
@@ -141,7 +164,7 @@ public class Database {
         System.out.println("getUserOrNull");
         final String sql = "select * from users where username = ?;";
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
             statement.setString(1, username);
 
             try (ResultSet rs = statement.executeQuery()) {
@@ -159,10 +182,8 @@ public class Database {
 
     public void close() throws IOException {
         try {
-            connection.close();
+            ds.close();
         } catch (SQLException throwables) {
         }
     }
-
-
 }

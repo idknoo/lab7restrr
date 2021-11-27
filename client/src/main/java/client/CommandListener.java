@@ -98,29 +98,29 @@ public class CommandListener {
                 }
 
             case "removeGreatKey":
-                if (cmd.length == 2)
-                    return new RemoveGreatKey(Integer.parseInt(cmd[1]));
+                if (cmd.length == 1)
+                    return new RemoveGreatKey(readOrganization());
                 else {
                     break;
                 }
 
             case "removeLowerKey":
-                if (cmd.length == 2)
-                    return new RemoveLowerKey(Integer.parseInt(cmd[1]));
+                if (cmd.length == 1)
+                    return new RemoveLowerKey(readOrganization());
                 else {
                     break;
                 }
             case "updateId":
                 if (cmd.length == 2)
-                    return new UpdateId(() -> readOrganizationId(), Integer.parseInt(cmd[1]));
+                    return new UpdateId(readOrganization(), Integer.parseInt(cmd[1]));
                 else {
                     break;
                 }
-            case "save":
-                if (cmd.length == 1) return new Save();
-                else {
-                    break;
-                }
+//            case "save":
+//                if (cmd.length == 1) return new Save();
+//                else {
+//                    break;
+//                }
             case "exit":
                 return new Exit();
 
@@ -163,7 +163,7 @@ public class CommandListener {
     private Organization readOrganization() {
         Organization organization = new Organization();
         Scanner scanner = new Scanner(System.in);
-        organization.setId(FieldReader.readID(scanner, "Введите ID организации."));
+//        organization.setId(FieldReader.readID(scanner, "Введите ID организации."));
         organization.setName(FieldReader.readString(scanner, "Введите название название организации."));
         float x = FieldReader.readX(scanner);
         long y = FieldReader.readY(scanner);
@@ -181,7 +181,7 @@ public class CommandListener {
     private Organization readOrganizationId() {
         Organization organization = new Organization();
         Scanner scanner = new Scanner(System.in);
-//        organization.setId(FieldReader.readID(scanner, "Введите ID организации."));
+        organization.setId(FieldReader.readID(scanner, "Введите ID организации."));
         organization.setName(FieldReader.readString(scanner, "Введите название название организации."));
         float x = FieldReader.readX(scanner);
         long y = FieldReader.readY(scanner);

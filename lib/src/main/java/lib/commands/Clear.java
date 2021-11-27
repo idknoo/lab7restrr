@@ -7,6 +7,6 @@ public class Clear implements Command {
 
     @Override
     public Message execute(CollectionWorker collectionWorker, User user) {
-        return collectionWorker.clear();
+        return collectionWorker.clear(user);
     }
 }

@@ -9,7 +9,7 @@ public class PrintFieldDescending implements Command{
 
     @Override
     public Message execute(CollectionWorker collectionWorker, User user) {
-        return collectionWorker.printFieldDescending();
+        return collectionWorker.printFieldDescending(user);
     }
 
 

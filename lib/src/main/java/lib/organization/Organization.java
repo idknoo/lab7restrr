@@ -8,6 +8,8 @@ import java.util.PriorityQueue;
  * Класс организации для описания хранящихся в коллекции данных
  */
 public class Organization implements Comparable<Organization>, Serializable {
+
+    private String ownerName;
     /**
      * ID организации Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
      */
@@ -138,6 +140,7 @@ public class Organization implements Comparable<Organization>, Serializable {
     @Override
     public String toString() {
         return "Organization:\n" +
+                "ownerName" + ownerName + "\n" +
                 "id=" + id + "\n" +
                 "name='" + name + '\'' +'\n' +
                 "coordinates=" + coordinates + "\n" +
@@ -165,6 +168,13 @@ public class Organization implements Comparable<Organization>, Serializable {
         return (int) (this.employeesCount - ((Organization) o).employeesCount);
     }
 
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
 
 
     //Результат положителен если объект больше сравнимаего, отрицателен, если меньше и равен 0, если объекты равны.

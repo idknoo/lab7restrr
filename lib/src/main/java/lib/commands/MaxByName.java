@@ -7,6 +7,6 @@ public class MaxByName implements Command{
 
     @Override
     public Message execute(CollectionWorker collectionWorker, User user) {
-        return collectionWorker.maxByName();
+        return collectionWorker.maxByName(user);
     }
 }

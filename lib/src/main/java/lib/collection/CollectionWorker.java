@@ -9,31 +9,31 @@ public interface CollectionWorker {
 
     Message help();
 
-    Message clear();
+    Message clear(User user);
 
     Message info();
 
     Message info(User user);
 
-    Message maxByName();
+    Message maxByName(User user);
 
-    Message printFieldDescending();
+    Message printFieldDescending(User user);
 
-    Message removeAllByCount(int employeesCount);
+    Message removeAllByCount(int employeesCount, User user);
 
-    Message removeGreatKey(Integer id);
+    Message removeGreatKey(Organization organization, User user);
 
-    Message removeKey(Integer id);
+    Message removeKey(Integer id, User user);
 
-    Message removeLowerKey(Integer id);
+    Message removeLowerKey(Organization organization, User user);
 
-    Message replaceIfLowe(Organization organization);
+    Message replaceIfLowe(Organization organization, User user);
 
-    Message save();
+//    Message save();
 
     Message show();
 
-    Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id, User user);
+    Message updateId(Organization organization, Integer id, User user);
 
 
     Message insert(Organization organization, User user);

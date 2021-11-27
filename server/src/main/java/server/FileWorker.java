@@ -39,7 +39,6 @@ public class FileWorker {
     public void serialize(ArrayList<Organization> organizations) throws IOException {
         Organization[] organizationsArr = organizations.toArray(new Organization[0]);
         System.out.println("save collection to " + file.getAbsolutePath());
-
         try (FileWriter fos = new FileWriter(file)) {
             objectMapper.writeValue(fos, organizationsArr);
         }

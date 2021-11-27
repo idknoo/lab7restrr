@@ -12,7 +12,7 @@ public class RemoveAllByCount implements Command {
 
     @Override
     public Message execute(CollectionWorker collectionWorker, User user) {
-        return collectionWorker.removeAllByCount(employeesCount);
+        return collectionWorker.removeAllByCount(employeesCount, user);
     }
 }
 

@@ -8,11 +8,8 @@ import lib.message.CollectionMessage;
 import lib.message.Message;
 import lib.organization.Organization;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,15 +17,15 @@ import java.util.stream.Collectors;
 public class CollectionWorkerImpl implements CollectionWorker {
 
     private final LocalDateTime time;
-    private final LinkedHashMap<Integer, Organization> organizationLinkedHashMap; //TODO: достаем из Организации ID и он будет ключом
-//    private final FileWorker fileWorker;
+    private final LinkedHashMap<Integer, Organization> organizationLinkedHashMap = new LinkedHashMap<Integer, Organization>();
     private final Database database;
 
     public CollectionWorkerImpl(Database database) {
-        organizationLinkedHashMap = Collections.synchronizedList(new ArrayList<>(database.readAllOrganizations())); // TODO: придумать что-то с типами тут
+        database.readAllOrganizations().forEach(organization -> {
+            organizationLinkedHashMap.put(organization.getId(), organization);
+        });
         this.time = LocalDateTime.now();
         this.database = database;
-        organizationLinkedHashMap.values().addAll(database.readAllOrganizations());
     }
 
     @Override
@@ -53,28 +50,43 @@ public class CollectionWorkerImpl implements CollectionWorker {
     }
 
     @Override
-    public Message clear() {
-        if (organizationLinkedHashMap.size() > 0) {
-            organizationLinkedHashMap.clear();
-            return new Message("Все элементы удалены");
-        } else {
-            return new Message("У вас нет элементов для удаления");
+    public Message clear(User user) {
+        String username = user.getName();
+        List<Organization> toRemove = organizationLinkedHashMap.values().stream()
+                .filter(p -> p.getOwnerName().equals(username))
+                .collect(Collectors.toList());
+
+        if (toRemove.size() > 0) {
+            boolean[] success = new boolean[]{true};
+
+            toRemove.forEach(p -> {
+                if (database.removeOrganization(p))
+                    organizationLinkedHashMap.remove(p);
+                else
+                    success[0] = false;
+            });
+
+            return success[0]
+                    ? new Message("Все элементы были удалены")
+                    : new Message("Не все элементы были удалены из-за ошибки в БД");
         }
+
+        return new Message("У вас нет элементов для удаления");
     }
 
-//    @Override
-//    public Message info() {
-//        StringBuilder strBuilder = new StringBuilder();
-//        strBuilder.append("Вызвана команда info. Информация о коллекции:");
-//        strBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
-//        strBuilder.append("\nКоллекция содержит элементы класса: Organization");
-//        strBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
-//        if (this.organizationLinkedHashMap.size() > 0) {
-//            strBuilder.append(String.format("\nДата инициализации коллекции: %s\n", this.time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
-//            strBuilder.append(String.format("\nМаксимальный элемент коллекции: \n%s\n", this.getMaxOrganization().toString()));
-//        }
-//        return new Message(strBuilder.toString());
-//    }
+    @Override
+    public Message info() {
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("Вызвана команда info. Информация о коллекции:");
+        strBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
+        strBuilder.append("\nКоллекция содержит элементы класса: Organization");
+        strBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
+        if (this.organizationLinkedHashMap.size() > 0) {
+            strBuilder.append(String.format("\nДата инициализации коллекции: %s\n", this.time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
+            strBuilder.append(String.format("\nМаксимальный элемент коллекции: \n%s\n", this.getMaxOrganization().toString()));
+        }
+        return new Message(strBuilder.toString());
+    }
 
     private Organization getMaxOrganization() {
         return organizationLinkedHashMap.values().stream().max(Organization::compareTo).orElse(null);
@@ -92,7 +104,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     }
 
     @Override
-    public Message updateId(ReadOrganizationOperation readOrganizationOperation, Integer id, User user) { // проверить
+    public Message updateId(Organization organization, Integer id, User user) { // проверить
         Organization toRemove = organizationLinkedHashMap.values().stream()
                 .filter(p -> p.getId().equals(id))
                 .findFirst()
@@ -101,11 +113,10 @@ public class CollectionWorkerImpl implements CollectionWorker {
         if (toRemove == null)
             return new Message("Организации с id " + id + " не существует.");
 
-        if (!toRemove.getName().equals(user.getName()))
+        if (!toRemove.getOwnerName().equals(user.getName()))
             return new Message("Организация с id = " + id + " не твоя. Не трогай чужое!");
 
-        Organization organization = readOrganizationOperation.readOrganization();
-        organization.setName(user.getName());
+        organization.setOwnerName(user.getName());
         organization.setId(id);
 
         if (database.removeOrganization(id) && database.insertOrganizationWithoutInitialization(organization)) {
@@ -121,7 +132,7 @@ public class CollectionWorkerImpl implements CollectionWorker {
     public Message info(User user) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Вызвана команда info. Информация о коллекции:");
-        stringBuilder.append("\nТип коллекции: " + organizationLinkedHashMap.getClass().getName());
+        stringBuilder.append("\nТип коллекции: ").append(organizationLinkedHashMap.getClass().getName());
         stringBuilder.append("\nКоллекция содержит элементы класса: Organization");
         stringBuilder.append(String.format("\nКоличество элементов коллекции: %d\n", this.organizationLinkedHashMap.size()));
         if (this.organizationLinkedHashMap.size() > 0) {
@@ -153,13 +164,13 @@ public class CollectionWorkerImpl implements CollectionWorker {
 
     @Override
     public Message insert(Organization organization, User user) {
-    if (database.initializeAndInsertOrganization(organization, user)) {
-        organizationLinkedHashMap.put(organization.getId(), organization); //проверить это
-        return new Message("Организация добавлена.");
-    } else {
-        return new Message("Организация не добавлена из-за ошибки в Базе данных.");
+        if (database.initializeAndInsertOrganization(organization, user)) {
+            organizationLinkedHashMap.put(organization.getId(), organization); //проверить это
+            return new Message("Организация добавлена.");
+        } else {
+            return new Message("Организация не добавлена из-за ошибки в Базе данных.");
+        }
     }
-}
 
 //    private void readOrganizations() {
 //        ArrayList<Organization> organizations = fileWorker.parse();
@@ -169,9 +180,14 @@ public class CollectionWorkerImpl implements CollectionWorker {
 //    }
 
     @Override
-
-    public Message replaceIfLowe(Organization organization) {
-        Organization toReplace = organizationLinkedHashMap.get(organization.getId());
+    public Message replaceIfLowe(Organization organization, User user) {
+        Organization toReplace = organizationLinkedHashMap
+                .values()
+                .stream()
+                .filter(p -> p.getOwnerName().equals(organization.getOwnerName())
+                        && organization.getId().equals(p.getId()))
+                .findFirst()
+                .orElse(null);
         if (organization.compareTo(toReplace) > 0) { // or < 0
             organizationLinkedHashMap.put(organization.getId(), organization);
             return new Message("Организация с заменой ID прошла успешно");
@@ -180,62 +196,98 @@ public class CollectionWorkerImpl implements CollectionWorker {
         }
     }
 
+//    @Override
+//    public Message save() {
+//        return null;
+//    }
+
     @Override
-    public Message removeLowerKey(Integer id) {
-        List<Integer> toRemove = organizationLinkedHashMap.keySet().stream()
-                .filter(p -> p < id)
+    public Message removeLowerKey(Organization organization, User user) {
+        List<Organization> toRemove = organizationLinkedHashMap.values().stream()
+                .filter(p -> p.compareTo(organization) < 0)
+                .filter(p -> p.getOwnerName().equals(organization.getOwnerName()))
                 .collect(Collectors.toList());
 
+        int[] cnt = new int[]{0};
         toRemove.forEach(p -> {
-            organizationLinkedHashMap.remove(p);
+            if (database.removeOrganization(p)) {
+                organizationLinkedHashMap.remove(p);
+                ++cnt[0];
+            }
         });
 
-        String answer = "Удаленные айдишники: " + toRemove.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String answer = cnt[0] + " организаций уничтожена.";
+        if (toRemove.size() != cnt[0])
+            answer += "\n Ошибка БД.";
 
         return new Message(answer);
     }
 
     @Override
-    public Message removeKey(Integer id) {
-        Organization organization = organizationLinkedHashMap.values().stream().filter(h -> h.getId().equals(id)).findAny().orElse(null);
+    public Message removeKey(Integer id, User user) {
+        // cities = cities.stream().filter(h -> !h.getId().equals(id)).collect(Collectors.toCollection(() -> new PriorityQueue<>()));
+        Organization organization = organizationLinkedHashMap.values()
+                .stream()
+                .filter(h -> h.getId().equals(id))
+                .findAny()
+                .orElse(null);
         if (organization == null) {
             return new Message("Элемент не найден");
         }
-        organizationLinkedHashMap.remove(id);
-        return new Message("Элемент удален");
+        if (organization.getOwnerName().equals(user.getName())) {
+            if (database.removeOrganization(id)) {
+                return new Message("Элемент удалён");
+            } else {
+                return new Message("В базе данных ошибка.");
+            }
+        } else {
+            return new Message("Вы кто такой, я вас не звал, это не ваш объект. ");
+        }
     }
 
 
     @Override
-    public Message removeGreatKey(Integer id) {
-        List<Integer> toRemove = organizationLinkedHashMap.keySet().stream()
-                .filter(p -> p > id)
+    public Message removeGreatKey(Organization organization, User user) {
+        List<Organization> toRemove = organizationLinkedHashMap.values().stream()
+                .filter(p -> p.compareTo(organization) > 0)
+                .filter(p -> p.getOwnerName().equals(organization.getOwnerName()))
                 .collect(Collectors.toList());
 
+        int[] cnt = new int[]{0};
         toRemove.forEach(p -> {
-            organizationLinkedHashMap.remove(p);
+            if (database.removeOrganization(p)) {
+                organizationLinkedHashMap.remove(p);
+                ++cnt[0];
+            }
         });
 
-        String answer = "Удаленные айдишники: " + toRemove.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String answer = cnt[0] + " организаций уничтожена.";
+        if (toRemove.size() != cnt[0])
+            answer += "\n Ошибка БД.";
 
         return new Message(answer);
     }
 
     @Override
-    public Message removeAllByCount(int employeesCount) {
-        Organization organization = organizationLinkedHashMap.values().stream().filter(h -> h.getEmployeesCount() == employeesCount).findAny().orElse(null);
+    public Message removeAllByCount(int employeesCount, User user) {
+        Organization organization = organizationLinkedHashMap.values()
+                .stream()
+                .filter(p -> p.getOwnerName().equals(user.getName()))
+                .filter(h -> h.getEmployeesCount() == employeesCount).findAny()
+                .orElse(null);
         if (organization == null) {
             return new Message("Элемент не найден");
         }
-        organizationLinkedHashMap.remove(organization);
+        organizationLinkedHashMap.remove(organization.getId());
         return new Message("Элемент удален");
     }
 
     @Override
-    public Message printFieldDescending() {
+    public Message printFieldDescending(User user) {
         List<String> list = organizationLinkedHashMap
                 .values()
                 .stream()
+                .filter(p -> p.getOwnerName().equals(user.getName()))
                 .map(Organization::getAnnualTurnover)
                 .sorted()
                 .map(String::valueOf)
@@ -245,10 +297,11 @@ public class CollectionWorkerImpl implements CollectionWorker {
 
     @Override
 
-    public Message maxByName() {
+    public Message maxByName(User user) {
         String max = organizationLinkedHashMap
                 .values()
                 .stream()
+                .filter(p -> p.getOwnerName().equals(user.getName()))
                 .map(Organization::getName)
                 .max(String::compareTo)
                 .orElse(null);

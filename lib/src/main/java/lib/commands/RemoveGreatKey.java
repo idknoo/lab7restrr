@@ -2,16 +2,18 @@ package lib.commands;
 
 import lib.collection.CollectionWorker;
 import lib.message.Message;
+import lib.organization.Organization;
 
 public class RemoveGreatKey implements Command {
-    private final Integer id;
+    private final Organization organization;
 
-    public RemoveGreatKey(Integer id) {
-        this.id = id;
+    public RemoveGreatKey(Organization organization) {
+        this.organization = organization;
     }
 
     @Override
     public Message execute(CollectionWorker collectionWorker, User user) {
-        return collectionWorker.removeGreatKey(id);
+        organization.setOwnerName(user.getName());
+        return collectionWorker.removeGreatKey(organization, user);
     }
 }
